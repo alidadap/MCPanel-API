@@ -1,2 +1,2 @@
-# MCPanel-Backend
+# MCPanel-API
 a Minecraft Control Panel Server Side API for Stop Start and ...
