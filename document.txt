@@ -1,0 +1,79 @@
+MINECRAFT SERVER PANEL - API REFERENCE
+=====================================
+
+BASE URL: http://your-server-ip:5834
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AUTHENTICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[POST] /api/login
+- Desc: Get JWT token
+- Body: {"user":"username", "pass":"password"}
+- Response: {"token":"JWT", "access":1}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SERVER CONTROL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[POST] /api/button
+- Desc: Start/stop server
+- Body: {"btn":"start|stop"}
+- Response: {"alert":"message"}
+
+[POST] /api/command 
+- Desc: Send server command
+- Body: {"cmd":"command"}
+- Response: {"alert":"ok"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE MANAGEMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[POST] /api/file (Default)
+- Desc: List files
+- Response: {"files":[], "dirs":[], "cwd":"path"}
+
+[POST] /api/file (Operations)
+- Upload:   FormData(file, cwd)
+- Download: {"run":"download", "file":"name"}
+- Delete:   {"run":"delete", "file|dir":"name"} 
+- Create:   {"run":"create", "file|dir":"name"}
+- Edit:     {"run":"edit", "ac":"read|write", "file":"name", "content?"}
+- Navigate: {"run":"go", "dir":"name|.."}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ACCOUNT MANAGEMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[POST] /api/account (Default)
+- Desc: List users
+- Response: {"users":[{"id":1, "username":"name", "access":1}]}
+
+[POST] /api/account (Operations)
+- Create: {"run":"create", "user":"name", "pass":"pwd", "access":1}
+- Delete: {"run":"delete", "id":1}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEBSOCKET
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+URL: ws://your-server-ip:5834/socket.io?token=JWT
+
+EVENTS:
+- status: Server metrics/player data
+- log:   Real-time console output
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ACCESS LEVELS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1 - Basic server control
+3 - File management  
+4 - Admin (user management)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ERROR CODES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+401 - Unauthorized (invalid token)
+403 - Forbidden (insufficient access)
+400 - Bad request (invalid parameters)
