@@ -1,0 +1,10 @@
+{
+    "key" : "Your/Key",
+    "root_folder" : "Your/minecraft/folder",
+    "current_folder" : "Your/minecraft/folder",
+    "stack_last_folder" : [],
+    "folder_list" : [],
+    "script" : "/bin/bash start_server_script.sh",
+    "logs" : "",
+    "body": null
+}
