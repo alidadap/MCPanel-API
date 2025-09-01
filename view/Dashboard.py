@@ -1,8 +1,9 @@
 import subprocess
+import os
 from flask import jsonify 
 from mcstatus.server import JavaServer
-from ..server import storage, os
-from Decorators import token_check, access_required, set_body
+from .config import storage
+from .Decorators import token_check, access_required, set_body
 
 
 minecraft_server = None
@@ -13,6 +14,8 @@ def make_server(script, directory):
 
 target = JavaServer.lookup('127.0.0.1')
 
+@token_check
+@access_required(1)
 def start():
     global minecraft_server
     
@@ -22,18 +25,20 @@ def start():
         # Try to start server 
         try:
             minecraft_server = make_server(storage['script'],storage['root_folder'])
-            return jsonify({"alert": 'Server Successfully Started'})
+            return jsonify({"message": 'Server Successfully Started'})
         
         # If have a error run this
         except Exception as error:
             print(error)
-            return jsonify({"alert": 'Failed! Check the Console on Backend'})
+            return jsonify({"message": 'Failed! Check the Console on Backend'})
         
     # if not is start 
     else:
-        return jsonify({"alert": 'Server Already is Started'})
+        return jsonify({"message": 'Server Already is Started'})
 
 
+@token_check
+@access_required(1)
 def stop():
     global minecraft_server
     
@@ -41,7 +46,7 @@ def stop():
     #If minecraft server is start
     if minecraft_server == None:
         os.system("pkill java")
-        return jsonify({"alert": 'Server Already is Stopped'})
+        return jsonify({"message": 'Server Already is Stopped'})
     
     # if not is start
     else:
@@ -54,13 +59,15 @@ def stop():
             storage['logs']=''
         except:
             minecraft_server= None
-        return jsonify({"alert": "Server Successfully Stopped"})
+        return jsonify({"message": "Server Successfully Stopped"})
 
-
+@set_body
+@token_check
+@access_required(2)
 def command():
     minecraft_server.stdin.write(storage['body'].get('cmd').encode()+b'\n')  # type: ignore
     minecraft_server.stdin.flush()  # type: ignore
-    return jsonify({"data":None, "message":"Command used"})
+    return jsonify({"message":"Command used"})
 
 
 def load_status():
@@ -83,66 +90,3 @@ def load_status():
                 "onlinePlayers":0,
                 "status":'offline'                
             }
-
-
-
-
-# # Check the user token is valid
-# @token_check
-# @access_required(1)
-# def handle_button():
-    
-#     # Try to define body of request
-#     try:
-#         body = dict(request.json)
-#     except Exception as error:
-#         print(error)
-        
-#     # If btn exist in body
-#     if body.get('btn'):
-        
-#         #If btn is start 
-#         if body.get('btn') == "start":
-            
-            
-        
-#         #if btn is stop 
-#         elif body.get('btn') == "stop":
-            
-           
-            
-#         # if something else
-#         else:
-#             return jsonify({"alert": "invalid btn"})
-#     else:
-#         return jsonify({"alert": "you forgoute somthing"})
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-#         @token_check
-# @access_required(1)
-# def run_command():
-    
-#     # Try to get body
-#     try:
-#         body = dict(request.json)
-#     except Exception as error:
-#         print(error)
-    
-#     # If cmd in the body
-#     if body.get('cmd'):
-#         if body.get('cmd') != 'stop' or body.get('cmd') != 'reload' or body.get('cmd') != 'reload confirm':
-#             minecraft_server.command(body.get('cmd'))
-#             return jsonify({"alert":"ok"})
-#     else:
-#         return jsonify({"alert": "you forgoute somthing"})
-        
-        
-

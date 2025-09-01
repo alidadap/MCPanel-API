@@ -14,7 +14,7 @@ class Users(Base):
     email = Column(String(255))  
 
 
-engine = create_engine("sqlite:///minecraft-site.db",connect_args={"check_same_thread": False}, echo=True)
+engine = create_engine("sqlite:///MCPanel.db",connect_args={"check_same_thread": False}, echo=True)
 
 Base.metadata.create_all(engine) # type: ignore
 

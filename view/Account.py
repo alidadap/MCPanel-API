@@ -1,8 +1,8 @@
-from flask import jsonify
-from database import session , Users
-from Decorators import token_check, access_required, set_body
-from ..server import storage
 import bcrypt
+from flask import jsonify
+from .database import session , Users
+from .Decorators import token_check, access_required, set_body
+from .config import storage
 
 
 @set_body
@@ -16,7 +16,7 @@ def get_users():
             "email" : user.email,
             "access" : user.access
         })
-    return jsonify({"users":users_dict})
+    return jsonify({"data":{"users":users_dict}})
 
 @set_body
 def add_user():
@@ -34,9 +34,10 @@ def add_user():
         new_user = Users(username=storage['body'].get('user'), password=hashed_password,access=storage['body'].get('access'),email=storage['body'].get('email')) # type: ignore
         session.add(new_user)
         session.commit()
-        return jsonify({"alert":"successful!"})
+        return jsonify({"message":"Successful!"})
+    
     else:
-        return jsonify({"alert":"somethings is wrong!"})
+        return jsonify({'message':'Please send valid data in body'})
 
 @set_body
 def update_user():
@@ -58,15 +59,15 @@ def update_user():
         user.access = storage['body'].get('access')
         user.email = storage['body'].get('email')
         session.commit()
-        return jsonify({"alert":"successful!"})
+        return jsonify({"message":"Successful!"})
     else:
-        return jsonify({"alert":"somethings is wrong!"})
+        return jsonify({'message':'Please send valid data in body'})
 @set_body
 def remove_user():
     if storage['body'].get('id'):
         user = session.get(int(storage['body'].get('id'))) # type: ignore
         session.delete(user)
         session.commit()
-        return jsonify({"alert":"user deleted!"})
+        return jsonify({"message":"User deleted!"})
     else:
-        return jsonify({"data":None, "message":"Error"})
+        return jsonify({"message":"Error"})

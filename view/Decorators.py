@@ -2,7 +2,8 @@ from flask import request, jsonify
 from jwt import ExpiredSignatureError, decode, InvalidTokenError
 from functools import wraps 
 from flask_socketio import emit
-from ..server import storage
+from .config import storage
+
 
 
 
@@ -22,14 +23,14 @@ def socketio_token_check(f):
     def wrapped(*args, **kwargs):
         token = request.args.get('token')  # Get token from query parameters
         if not token:
-            emit('auth', {'alert': 'Token is required'}) # Send error to client
+            emit('auth', {'message': 'Token is required'}) # Send error to client
             return False  # Disconnect the client
 
         try:
             payload = decode(token, storage["key"], algorithms=["HS256"])
             user = payload.get('user')  # Assuming 'user' is in payload
             if not user:
-                emit('auth', {'alert': 'Invalid token payload'})
+                emit('auth', {'message': 'Invalid token payload'})
                 return False
 
             # Store the user in the storage for later use
@@ -37,13 +38,13 @@ def socketio_token_check(f):
             request.user = user  # type: ignore # Store user
 
         except ExpiredSignatureError:
-            emit('auth', {'alert': 'Token has expired'})
+            emit('auth', {'message': 'Token has expired'})
             return False
         except InvalidTokenError:
-            emit('auth', {'alert': 'Token is invalid'})
+            emit('auth', {'message': 'Token is invalid'})
             return False
         except Exception as e:
-            emit('auth', {'alert': f'Token decoding failed: {e}'})
+            emit('auth', {'message': f'Token decoding failed: {e}'})
             return False
         return f(*args, **kwargs)
     return wrapped
@@ -61,15 +62,15 @@ def token_check(func):
             if not token:
                 token = dict(request.json).get('token') # type: ignore
                 if not token:
-                    return jsonify({'alert': 'Token is required'})
+                    return jsonify({'message': 'Token is required'})
         try:
             # Decode token using the secret key
             payload = decode(token, storage["key"], algorithms=["HS256"])
             print(payload)
         except ExpiredSignatureError:
-            return jsonify({'alert': 'Token has expired'})
+            return jsonify({'message': 'Token has expired'})
         except InvalidTokenError:
-            return jsonify({'alert': 'Token is invalid'})
+            return jsonify({'message': 'Token is invalid'})
         return func(*args, **kwargs)
     return decorated
 
@@ -105,17 +106,17 @@ def access_required(required_access):
         def decorated_function(*args, **kwargs):
             token = request.cookies.get('token') or request.form.get('token') or (request.json and request.json.get('token'))
             if not token:
-                return jsonify({'alert': 'Token is required'}), 401
+                return jsonify({'message': 'Token is required'}), 401
             
             try:
                 payload = decode(token, storage["key"], algorithms=["HS256"])
                 user_access = payload.get('access')
                 
                 if str(required_access) not in user_access:
-                    return jsonify({'alert': 'Access denied'}), 403
+                    return jsonify({'message': 'Access denied'}), 403
                     
             except Exception as e:
-                return jsonify({'alert': str(e)}), 401
+                return jsonify({'message': str(e)}), 401
                 
             return f(*args, **kwargs)
         return decorated_function

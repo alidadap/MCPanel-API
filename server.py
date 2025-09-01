@@ -1,16 +1,15 @@
 # ===== Import Liberys ===== #
-import json
 from flask import Flask
 from flask_cors import CORS 
 from flask_socketio import SocketIO
 import psutil
-import os
 import time
+from view.config import storage
 from view.Auth import login
 from view.Dashboard import start, stop, command, load_status, minecraft_server
 from view.Decorators import socketio_token_check
 from view.FileManager import (
-    get_files,
+    get_files, 
     change_dir,
     upload,
     download,
@@ -25,9 +24,7 @@ from view.FileManager import (
 from view.Account import get_users, add_user, update_user, remove_user
 
 # load config
-conf_file = open("config.json","r")
-storage = dict(json.load(conf_file))
-conf_file.close()
+
 
 # ===== Init App ===== #
 app = Flask(__name__) # Define object app for route and socketIO 

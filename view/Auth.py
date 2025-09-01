@@ -2,9 +2,8 @@ from jwt import  encode
 from datetime import datetime, timedelta 
 from flask import request, jsonify 
 import bcrypt
-from database import session , Users
-from ..server import storage
-
+from .database import session , Users
+from .config import storage
 
 
 def login():
@@ -17,7 +16,7 @@ def login():
         print(user)
     except Exception as error:
         print(error)
-        return jsonify({"alert": 'Failed! Check the Console on Backend'})
+        return jsonify({"message": 'Failed! Check the Console on Backend'})
         
     # Check username and password validity
     if user.password == password:
@@ -30,9 +29,8 @@ def login():
             }, storage["key"], algorithm="HS256")
             
         # Create response with HttpOnly cookie
-        resp = jsonify({'alert': 'Login successful', 'token': token,'access': user.access})
+        resp = jsonify({'message': 'Login successful', "data":{'token': token,'access': user.access}})
         return resp
     # If user not in the database
     else:
-
-        return jsonify({'alert': 'Invalid username or password', 'token': None})
+        return jsonify({'message': 'Invalid username or password'})
