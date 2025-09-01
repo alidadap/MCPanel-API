@@ -1,79 +1,285 @@
-MINECRAFT SERVER PANEL - API REFERENCE
-=====================================
 
-BASE URL: http://your-server-ip:5834
+MCPanel-API Documentation
+=========================
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-AUTHENTICATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Overview
+--------
+MCPanel-API is a Flask-based REST and WebSocket API for managing a Minecraft server. It provides functionality for:
+- Authentication
+- Server Control (start, stop, send commands, get status/logs)
+- File Management (upload, download, edit, move, etc.)
+- User Account Management
+- Live Monitoring via Socket.IO
 
-[POST] /api/login
-- Desc: Get JWT token
-- Body: {"user":"username", "pass":"password"}
-- Response: {"token":"JWT", "access":1}
+Base URL
+--------
+http://<your-server-ip>:5834
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SERVER CONTROL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Authentication API
+------------------
 
-[POST] /api/button
-- Desc: Start/stop server
-- Body: {"btn":"start|stop"}
-- Response: {"alert":"message"}
+Login
+-----
+- Endpoint: POST /login
+- Description: Authenticate a user with username and password. Returns a JWT token and access level.
+- Request Body:
+{
+  "user": "admin",
+  "pass": "123456"
+}
+- Response (success):
+{
+  "message": "Login successful",
+  "data": {
+    "token": "<jwt-token>",
+    "access": "1"
+  }
+}
+- Response (failure):
+{
+  "message": "Invalid username or password"
+}
 
-[POST] /api/command 
-- Desc: Send server command
-- Body: {"cmd":"command"}
-- Response: {"alert":"ok"}
+Account Manager API
+------------------
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FILE MANAGEMENT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Get Users
+---------
+- Endpoint: POST /acmgr/get
+- Description: Returns a list of all users.
+- Response Example:
+{
+  "data": {
+    "users": [
+      {"id": 1, "username": "admin", "email": "admin@example.com", "access": "owner"},
+      {"id": 2, "username": "player1", "email": "player1@example.com", "access": "user"}
+    ]
+  }
+}
 
-[POST] /api/file (Default)
-- Desc: List files
-- Response: {"files":[], "dirs":[], "cwd":"path"}
+Add User
+--------
+- Endpoint: POST /acmgr/add
+- Description: Add a new user.
+- Request Body:
+{
+  "user": "newuser",
+  "pass": "123456",
+  "confirm": "123456",
+  "email": "new@example.com",
+  "access": "user"
+}
+- Response (success):
+{
+  "message": "Successful!"
+}
+- Response (failure):
+{
+  "message": "Please send valid data in body"
+}
 
-[POST] /api/file (Operations)
-- Upload:   FormData(file, cwd)
-- Download: {"run":"download", "file":"name"}
-- Delete:   {"run":"delete", "file|dir":"name"} 
-- Create:   {"run":"create", "file|dir":"name"}
-- Edit:     {"run":"edit", "ac":"read|write", "file":"name", "content?"}
-- Navigate: {"run":"go", "dir":"name|.."}
+Update User
+-----------
+- Endpoint: POST /acmgr/update
+- Description: Update an existing user.
+- Request Body:
+{
+  "id": 2,
+  "user": "updateduser",
+  "pass": "newpass123",
+  "confirm": "newpass123",
+  "email": "updated@example.com",
+  "access": "admin"
+}
+- Response (success):
+{
+  "message": "Successful!"
+}
+- Response (failure):
+{
+  "message": "Please send valid data in body"
+}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ACCOUNT MANAGEMENT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Remove User
+-----------
+- Endpoint: POST /acmgr/remove
+- Description: Remove a user by ID.
+- Request Body:
+{
+  "id": 2
+}
+- Response (success):
+{
+  "message": "User deleted!"
+}
+- Response (error):
+{
+  "message": "Error"
+}
 
-[POST] /api/account (Default)
-- Desc: List users
-- Response: {"users":[{"id":1, "username":"name", "access":1}]}
+Dashboard API
+-------------
 
-[POST] /api/account (Operations)
-- Create: {"run":"create", "user":"name", "pass":"pwd", "access":1}
-- Delete: {"run":"delete", "id":1}
+Start Server
+------------
+- Endpoint: POST /dashboard/start
+- Auth Required: Yes (access level ≥ 1)
+- Response Examples:
+{
+  "message": "Server Successfully Started"
+}
+{
+  "message": "Server Already is Started"
+}
+{
+  "message": "Failed! Check the Console on Backend"
+}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-WEBSOCKET
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Stop Server
+-----------
+- Endpoint: POST /dashboard/stop
+- Auth Required: Yes (access level ≥ 1)
+- Response Examples:
+{
+  "message": "Server Successfully Stopped"
+}
+{
+  "message": "Server Already is Stopped"
+}
 
-URL: ws://your-server-ip:5834/socket.io?token=JWT
+Send Command
+------------
+- Endpoint: POST /dashboard/command
+- Auth Required: Yes (access level ≥ 2)
+- Request Body:
+{
+  "cmd": "say Hello players!"
+}
+- Response:
+{
+  "message": "Command used"
+}
 
-EVENTS:
-- status: Server metrics/player data
-- log:   Real-time console output
+File Manager API
+----------------
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ACCESS LEVELS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1 - Basic server control
-3 - File management  
-4 - Admin (user management)
+Auth Required: Yes (access level ≥ 3)
+All endpoints use POST requests
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ERROR CODES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-401 - Unauthorized (invalid token)
-403 - Forbidden (insufficient access)
-400 - Bad request (invalid parameters)
+Upload File
+-----------
+- Endpoint: /fmgr/net/upload
+- Request: Multipart form-data with file
+- Response Example:
+{
+  "message": "File uploaded successfully",
+  "data": {"filePath": "/server/world/file.txt"}
+}
+
+Download File
+-------------
+- Endpoint: /fmgr/net/download
+- Request Body:
+{"file": "example.txt"}
+- Response: Returns the file as attachment
+
+Download File from URL
+----------------------
+- Endpoint: /fmgr/net/url-download
+- Request Body:
+{"link": "http://example.com/file.zip"}
+- Response:
+{"message": "Downloaded!"}
+
+Get Files
+---------
+- Endpoint: /fmgr
+- Response Example:
+{
+  "data": {
+    "files": ["file1.txt","file2.txt"],
+    "dirs": ["world","plugins"],
+    "cwd": "/server/"
+  }
+}
+
+Change Directory
+----------------
+- Endpoint: /fmgr/cd
+- Request Body:
+{"dir": "world"}  or {"dir": ".."}
+- Response Example:
+{
+  "message": "Successfull",
+  "data": {"cwd": "/server/world/"}
+}
+
+Zip / Unzip
+------------
+- Endpoint: /fmgr/file/zip
+- Request Body:
+{"ac": "zip", "dir": "folder_name"} or {"ac": "unzip", "file": "archive.zip"}
+- Response Example:
+{"message": "Zipd!"} / {"message": "Unzipd!"}
+
+Remove File/Folder
+------------------
+- Endpoint: /fmgr/file/remove
+- Request Body: {"file": "file.txt"} or {"dir": "foldername"}
+- Response Example:
+{"message": "Successfull"}
+
+Rename File/Folder
+------------------
+- Endpoint: /fmgr/file/rename
+- Request Body: {"file": "old.txt", "name": "new.txt"}
+- Response Example:
+{"message": "Successfull"}
+
+Edit File
+---------
+- Endpoint: /fmgr/file/edit
+- Request Body for read: {"action": "read", "file": "file.txt"}
+- Request Body for write: {"action": "write", "file": "file.txt", "content": "new content"}
+- Response Example:
+{"data": {"content": "file content"}} / {"message": "File successfully Saved"}
+
+Create File/Folder
+------------------
+- Endpoint: /fmgr/file/create
+- Request Body: {"file": "new.txt"} or {"dir": "newfolder"}
+- Response Example:
+{"message": "Successfull"}
+
+Move File/Folder
+----------------
+- Endpoint: /fmgr/file/move
+- Request Body: {"file": "file.txt", "dir": ".."} or {"file": "file.txt", "dir": "subfolder"}
+- Response Example:
+{"message": "File moved"}
+
+Socket.IO (Real-time Monitoring)
+-------------------------------
+
+Connection: ws://<server-ip>:5834/socket.io/
+Events:
+- status: Sends server performance data repeatedly
+{
+  "ram": 65.3,
+  "cpu": 21.8,
+  "address": "skyvers.xyz:25565",
+  "onlinePlayers": 2,
+  "maxPlayers": 20,
+  "playersName": ["Steve","Alex"],
+  "status": "online"
+}
+
+- log: Streams Minecraft server console logs
+{"log": "[Server thread/INFO]: Player joined the game"}
+
+Error Responses
+---------------
+- 400 Bad Request – Invalid input
+- 401 Unauthorized – Missing or invalid token
+- 403 Forbidden – Access denied
+- 500 Internal Server Error – Server failure
