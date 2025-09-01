@@ -7,7 +7,7 @@ import psutil
 import os
 import time
 from view.Auth import login
-from view.Dashboard import start, stop, command
+from view.Dashboard import start, stop, command, load_status, minecraft_server
 from view.Decorators import socketio_token_check
 from view.FileManager import (
     get_files,
@@ -60,6 +60,7 @@ app.add_url_rule('/dashboard/command', view_func=command, methods=['POST'])
 
 ####======= File Manager Routes =======####
 
+app.add_url_rule('/fmgr', view_func=get_files, methods=['POST']) 
 app.add_url_rule('/fmgr/cd', view_func=change_dir, methods=['POST']) 
 
 app.add_url_rule('/fmgr/net/upload', view_func=upload, methods=['POST']) 
@@ -95,15 +96,12 @@ def handle_connect():
     #Define send_status function for send status of minecraft_server
     def send_status():
         while True:
-            minecraft_server.load_status() # Call load_status method for load status of minecraft_server and define emit data
+             # Call load_status method for load status of minecraft_server and define emit data
             data = {
-                'status': minecraft_server.status,
                 'ram': psutil.virtual_memory().percent,
                 "cpu": psutil.cpu_percent(),
-                "onlinePlayers": minecraft_server.online_players,
-                "maxPlayers": minecraft_server.max_players,
-                'playersName':minecraft_server.players_name,
-                "address": "skyvers.xyz:25565"
+                "address": "skyvers.xyz:25565",
+                **load_status()
             }
 
             # emiting data on status 
@@ -118,7 +116,7 @@ def handle_connect():
 
             try:
                 # Define log_data variable and emit
-                log_data = minecraft_server.is_start.stdout.readline().decode('utf-8').strip()+'\n'
+                log_data = minecraft_server.stdout.readline().decode('utf-8').strip()+'\n' # type: ignore
                 if log_data == '\n':
                     continue
                 storage['logs'] = storage['logs']+log_data
@@ -131,90 +129,6 @@ def handle_connect():
     socketio.start_background_task(send_log)
     socketio.start_background_task(send_status)
 
-
-
-
-
-
-@app.route("/api/file",methods=['POST','GET']) #--->> /api/file
-@token_check
-@access_required(3)
-def file():
-
-        elif body.get('run') == 'create':
-
-            # If file in the body
-           
-
-        # If run is move
-        elif body.get('run') == 'move':   
-
-            
-
-    # If run is not in the body 
-    else:
-        files=[] # Define files name list 
-        dirs=[] # Define folders name list
-        print("on list dir: "+storage['current_folder'])
-        list_files = os.listdir(storage['current_folder'])
-                  
-        # Loop for separation files and folders
-        for file in list_files:
-            if os.path.isdir(storage['current_folder']+file):
-                dirs.append(file)
-            else:
-                files.append(file)
-
-        storage['folder_list'] = dirs
-
-        return jsonify({'files':files,'dirs':dirs,'cwd':storage['current_folder']})
-
-@app.route("/api/account",methods=['POST']) #--->> /api/file
-@token_check
-@access_required(4)
-def account():
-    # Try to get the body
-    try:
-        body = dict(request.json)
-    except:
-        body={}
-    
-    # default page
-    if body.get("run") and body.get("run") == "create":
-        condition_ok : bool = (
-            body.get('user') and
-            body.get('pass') and
-            body.get('confirm') and
-            body.get('access') and
-            body.get('email') and
-            not session.query(PanelUser).filter_by(username=body.get('user'), password=body.get('pass'),access=body.get('access'),email=body.get('email')).first() and
-            body.get('pass') == body.get('confirm')
-        )
-        if condition_ok:    
-            hashed_password = bcrypt.hashpw(body.get('pass').encode(), storage['key']).decode()
-            new_user = PanelUser(username=body.get('user'), password=hashed_password,access=body.get('access'),email=body.get('email'))
-            session.add(new_user)
-            session.commit()
-            return jsonify({"alert":"successful!"})
-        else:
-            return jsonify({"alert":"somethings is wrong!"})
-    elif body.get("run") and body.get("run") == "delete":
-        if body.get('id'):
-            q = delete(PanelUser).where(PanelUser.id == int(body.get('id')))
-            session.execute(q)
-            session.commit()
-            return jsonify({"alert":"user deleted!"})
-    else:    
-        users = session.query(PanelUser).all()
-        users_dict = []
-        for user in users:
-            users_dict.append({
-                "id" : user.id,
-                "username" : user.username,
-                "email" : user.email,
-                "access" : user.access
-            })
-        return jsonify({"users":users_dict})
 
 if __name__ == "__main__":
     socketio.run(app, debug=True, port=5834, host="0.0.0.0")

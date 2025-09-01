@@ -27,18 +27,33 @@ def download():
         as_attachment=True,
         download_name=storage['body'].get('file'),
         mimetype='application/octet-stream')
-        
+    else:
+        return jsonify({"data":None, "message":"Error"})
 
 @set_body
 def url_download():
     if storage['body'].get('link'):
             os.system(f'wget -P {storage['current_folder']} '+storage['body'].get('link'))
-
+            return jsonify({"data":None, "message":"Downloaded!"})
+    else:
+        return jsonify({"data":None, "message":"Error"})
 
 # file route
 @set_body
 def get_files():
-    pass
+    files=[] # Define files name list 
+    dirs=[] # Define folders name list
+    print("on list dir: "+storage['current_folder'])
+    list_files = os.listdir(storage['current_folder'])
+              
+    # Loop for separation files and folders
+    for file in list_files:
+        if os.path.isdir(storage['current_folder']+file):
+            dirs.append(file)
+        else:
+            files.append(file)
+    storage['folder_list'] = dirs
+    return jsonify({'files':files,'dirs':dirs,'cwd':storage['current_folder']})
 
 
 @set_body
